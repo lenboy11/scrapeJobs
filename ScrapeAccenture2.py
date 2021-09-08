@@ -3,7 +3,6 @@ from selenium.webdriver.common.keys import Keys
 import time
 from bs4 import BeautifulSoup
 import requests
-import csv
 
 accentureWeb = 'https://www.accenture.com/'
 PATH = "C:\Program Files (x86)\chromedriver.exe"
