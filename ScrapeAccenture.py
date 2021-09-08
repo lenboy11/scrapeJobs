@@ -6,9 +6,9 @@ import os, sys
 def main():
     # Initial Values 
     searchTerm = ""
-    accentureWeb = 'https://www.accenture.com/'
+    accentureWeb = 'https://www.accenture.com/de-de/careers/jobsearch?'
     # First Part: Get Country Codes and filter by languages
-    source = requests.get( accentureWeb + 'de-de/careers/jobsearch?' ).text
+    source = requests.get( accentureWeb ).text
     soup = BeautifulSoup(source, 'lxml')
     countrylist = soup.find('ul', class_="countrylist")
     cs = {}
