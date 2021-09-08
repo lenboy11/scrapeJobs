@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import csv
-from urllib import parse
+import os, sys
 
 def main():
     # Initial Values 
@@ -25,10 +25,10 @@ def main():
                 elif textlist[i] == ")":
                     indexr = i
                     break
+            countryName = ' '.join(textlist[:indexl])
             language = ' '.join(textlist[indexl+1:indexr])
             # Filter by languages german (de) and english (en)
-            if 'en' in countryCode or 'de' in countryCode:      
-                cs[countryCode] = [ countryCode[3:5] , country['value'], language ] # Key: za-en, Values: en (for API), South Africa (for UI), English (for UI)
+            cs[countryCode] = [ countryCode[3:5] , countryName, language ] # Key: za-en, Values: en (for API), South Africa (for UI), English (for UI)
     except Exception:
         pass
     # Second Part: Get Jobs for each country
@@ -54,7 +54,11 @@ def main():
         payload = "{\"f\":1,\"s\":9,\"k\":\"" + searchTerm + "\",\"lang\":\"" + cs[countryCode][0] + "\",\"cs\":\"" + countryCode + "\",\"df\":\"[{\\\"metadatafieldname\\\":\\\"skill\\\",\\\"items\\\":[]},{\\\"metadatafieldname\\\":\\\"location\\\",\\\"items\\\":[]},{\\\"metadatafieldname\\\":\\\"postedDate\\\",\\\"items\\\":[]},{\\\"metadatafieldname\\\":\\\"travelPercentage\\\",\\\"items\\\":[]},{\\\"metadatafieldname\\\":\\\"jobTypeDescription\\\",\\\"items\\\":[{\\\"term\\\":\\\"entry-level job\\\",\\\"selected\\\":true}]},{\\\"metadatafieldname\\\":\\\"businessArea\\\",\\\"items\\\":[]},{\\\"metadatafieldname\\\":\\\"specialization\\\",\\\"items\\\":[]},{\\\"metadatafieldname\\\":\\\"workforceEntity\\\",\\\"items\\\":[]}]\",\"c\":\"" + cs[countryCode][1] + "\",\"sf\":0,\"syn\":false,\"isPk\":false,\"wordDistance\":0,\"userId\":\"\"}"
         #                 ?       ?             searchTerm (consultant)         Language (en)                         countryCode (us-en)                                   Name of the field: Selections                               Name of the field: Selections                                 Name of the field:   Selections                                     Name of the field:     Selections                                      Name of the field: Selections                     Entry-Level Job is selected                                                      Name of the field: Selections                                     Name of the field:   Selections                                    Name of the field:     Selections                     countryName (Deutschland)       ?           ?               ?                   ?             ?
         # Get the Jobs Table
-        response = requests.request("POST", url, data=payload, headers=headers)
+        try: 
+            response = requests.request("POST", url, data=payload, headers=headers) # Issues with non latin letters like Chinese
+        except Exception as e:
+            print( str(e) + str(str(cs[countryCode][1]).encode("utf-8")) )
+
         dict = response.json()
         jobs = dict['documents']
         for job in jobs:
