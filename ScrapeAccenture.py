@@ -12,12 +12,25 @@ def main():
     soup = BeautifulSoup(source, 'lxml')
     countrylist = soup.find('ul', class_="countrylist")
     cs = {}
-    lang = []
-    for country in countrylist.find_all(class_='list-group-item'):
-        countryCode = country['data-country-site']
-        # Filter by languages german (de) and english (en)
-        if 'en' in countryCode or 'de' in countryCode:      
-            cs[countryCode] = [ countryCode[3:5] , country['value'], country.text.split()[2] ]
+    try:
+        for country in countrylist.find_all(class_='list-group-item'):
+            countryCode = country['data-country-site'] # Country Code, e.g. za-en (South Africa - English)
+            # Determine Language (English, German, Spanish, ...)
+            textlist = country.text.split() # contains "countryName   ( Language )"  where the spacing is uncommon and country name can have spaces, e.g. South Africa
+            indexl = 1
+            indexr = 4
+            for i in range(2,len(textlist)):
+                if textlist[i] == "(":
+                    indexl = i
+                elif textlist[i] == ")":
+                    indexr = i
+                    break
+            language = ' '.join(textlist[indexl+1:indexr])
+            # Filter by languages german (de) and english (en)
+            if 'en' in countryCode or 'de' in countryCode:      
+                cs[countryCode] = [ countryCode[3:5] , country['value'], language ] # Key: za-en, Values: en (for API), South Africa (for UI), English (for UI)
+    except Exception:
+        pass
     # Second Part: Get Jobs for each country
     url = "https://www.accenture.com/api/sitecore/JobSearch/FindJobs"
     headers = {
@@ -33,7 +46,7 @@ def main():
         "x-requested-with": "XMLHttpRequest"
         }
     # Save results in csv file
-    csv_file = open('accenture_scrape.csv', 'w')
+    csv_file = open('accenture_scrape.csv', 'w', encoding='UTF-8')
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow(['Country', 'Job-Description', 'Link'])
     for countryCode in cs:
@@ -48,8 +61,11 @@ def main():
             # Add Country Code to jobUrl before adding it to the csv
             jobUrl = job['jobDetailUrl'].split('/')
             jobUrl[3] = countryCode
-            csv_writer.writerow([str(cs[countryCode][1]) + " (" + str(cs[countryCode][2]) + ")" , job['title'], '/'.join(jobUrl) ])
-            # accentureWeb + countryCode + "/jobdetails?id=" + job['id'] + "&title=" + parse.quote_plus(job['title'], safe='()')
+            try:
+                csv_writer.writerow([str(cs[countryCode][1]) + " (" + str(cs[countryCode][2]) + ")" , job['title'], '/'.join(jobUrl) ])
+            except Exception:
+                print(str(cs[countryCode][1]) + " (" + str(cs[countryCode][2]) + ") : " + job['title'] + " See: " + '/'.join(jobUrl))
+
     csv_file.close()
 
 if __name__=="__main__":
